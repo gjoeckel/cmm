@@ -33,7 +33,7 @@
   <h1>Canvas Course Video Manager</h1>
   <div class="filters">
     <label>Type: <select id="filterType"><option value="">All</option><option value="audio">Audio</option><option value="graphics">Graphics</option><option value="ae">AE</option><option value="premiere">Premiere</option><option value="video">Video</option></select></label>
-    <label>Module: <select id="filterModule"><option value="">All</option></select></label>
+    <label>Folder: <select id="filterModule"><option value="">All</option></select></label>
   </div>
   <div class="stats" id="stats"></div>
   <table>
@@ -106,9 +106,12 @@
       return d.innerHTML;
     }
 
+    const FOLDER_ORDER = ['orientation', 'm1', 'm2', 'm3', 'm4', 'm5', 'Audio', 'Ae', 'Ai'];
     function populateModuleFilter() {
       const sel = document.getElementById('filterModule');
-      const opts = ['', ...[...modules].sort()];
+      const ordered = FOLDER_ORDER.filter((f) => modules.has(f));
+      const rest = [...modules].filter((f) => !FOLDER_ORDER.includes(f)).sort();
+      const opts = ['', ...ordered, ...rest];
       sel.innerHTML = opts.map((m) => `<option value="${escapeHtml(m)}">${m || 'All'}</option>`).join('');
     }
 
