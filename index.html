@@ -109,9 +109,8 @@
     const FOLDER_ORDER = ['orientation', 'm1', 'm2', 'm3', 'm4', 'm5', 'Audio', 'Ae', 'Ai'];
     function populateModuleFilter() {
       const sel = document.getElementById('filterModule');
-      const ordered = FOLDER_ORDER.filter((f) => modules.has(f));
       const rest = [...modules].filter((f) => !FOLDER_ORDER.includes(f)).sort();
-      const opts = ['', ...ordered, ...rest];
+      const opts = ['', ...FOLDER_ORDER, ...rest];
       sel.innerHTML = opts.map((m) => `<option value="${escapeHtml(m)}">${m || 'All'}</option>`).join('');
     }
 
