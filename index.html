@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Course Video Manager</title>
+  <style>
+    :root { --fg: #1a1a1a; --bg: #f8f9fa; --accent: #0969da; --muted: #656d76; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 1rem; background: var(--bg); color: var(--fg); line-height: 1.5; }
+    h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+    .filters { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+    .filters label { font-size: 0.875rem; }
+    .filters select { padding: 0.35rem 0.5rem; font-size: 0.875rem; }
+    .stats { font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f6f8fa; font-weight: 600; color: var(--fg); }
+    tr:hover { background: #fafafa; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+    .badge-audio { background: #e7f3ff; color: #0550ae; }
+    .badge-graphics { background: #ddf4ff; color: #0969da; }
+    .badge-ae { background: #fff8c5; color: #9a6700; }
+    .badge-premiere { background: #ffebe9; color: #cf222e; }
+    .badge-video { background: #dafbe1; color: #1a7f37; }
+    .path { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .load-err { color: #cf222e; }
+  </style>
+</head>
+<body>
+  <h1>Canvas Course Video Manager</h1>
+  <div class="filters">
+    <label>Type: <select id="filterType"><option value="">All</option><option value="audio">Audio</option><option value="graphics">Graphics</option><option value="ae">AE</option><option value="premiere">Premiere</option><option value="video">Video</option></select></label>
+    <label>Module: <select id="filterModule"><option value="">All</option></select></label>
+  </div>
+  <div class="stats" id="stats"></div>
+  <table>
+    <thead>
+      <tr><th>Path</th><th>Name</th><th>Type</th><th>Size</th><th>Open in Box</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <script>
+    const BOX_BASE = 'https://usu.app.box.com';
+    const MEDIA_EXT = { aup3: 'audio', ai: 'graphics', aep: 'ae', prproj: 'premiere', mp4: 'video', mov: 'video', webm: 'video' };
+    const TYPE_LABELS = { audio: 'Audio', graphics: 'Graphics', ae: 'AE', premiere: 'Premiere', video: 'Video' };
+
+    let allItems = [];
+    let modules = new Set();
+
+    function getType(name) {
+      const ext = (name || '').split('.').pop()?.toLowerCase();
+      return MEDIA_EXT[ext] || null;
+    }
+
+    function parseModule(path) {
+      if (!path) return '';
+      const parts = path.replace(/^AD-365-V4\/?\s*/, '').split('/');
+      const first = parts[0]?.trim();
+      if (/^m[1-5]$/.test(first)) return first;
+      return first || '';
+    }
+
+    function formatBytes(n) {
+      if (!n || n === 0) return '—';
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / 1024 / 1024).toFixed(2) + ' MB';
+    }
+
+    function filterAndRender() {
+      const typeFilter = document.getElementById('filterType').value;
+      const moduleFilter = document.getElementById('filterModule').value;
+      const filtered = allItems.filter((item) => {
+        if (typeFilter && getType(item.name) !== typeFilter) return false;
+        if (moduleFilter && parseModule(item.path) !== moduleFilter) return false;
+        return true;
+      });
+      renderTable(filtered);
+      document.getElementById('stats').textContent = `Showing ${filtered.length} of ${allItems.length} media files`;
+    }
+
+    function renderTable(items) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = items.map((item) => {
+        const type = getType(item.name);
+        const label = type ? TYPE_LABELS[type] : '—';
+        const badgeClass = type ? `badge badge-${type}` : '';
+        const boxUrl = item.type === 'folder' ? `${BOX_BASE}/folder/${item.id}` : `${BOX_BASE}/file/${item.id}`;
+        return `<tr>
+          <td class="path" title="${(item.path || '').replace(/"/g, '&quot;')}">${escapeHtml(item.path || '')}</td>
+          <td>${escapeHtml(item.name || '')}</td>
+          <td><span class="${badgeClass}">${escapeHtml(label)}</span></td>
+          <td>${item.type === 'file' ? formatBytes(item.size) : '—'}</td>
+          <td><a href="${boxUrl}" target="_blank" rel="noopener">Open in Box</a></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function populateModuleFilter() {
+      const sel = document.getElementById('filterModule');
+      const opts = ['', ...[...modules].sort()];
+      sel.innerHTML = opts.map((m) => `<option value="${escapeHtml(m)}">${m || 'All'}</option>`).join('');
+    }
+
+    fetch('./data/AD-365-V4-map.json')
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then((data) => {
+        const files = (data.items || []).filter((i) => i.type === 'file');
+        allItems = files.filter((i) => getType(i.name));
+        allItems.forEach((i) => modules.add(parseModule(i.path)));
+        modules.delete('');
+        populateModuleFilter();
+        filterAndRender();
+        document.getElementById('filterType').onchange = filterAndRender;
+        document.getElementById('filterModule').onchange = filterAndRender;
+      })
+      .catch((err) => {
+        document.getElementById('stats').innerHTML = '<span class="load-err">Failed to load map: ' + escapeHtml(err.message) + '. Ensure data/AD-365-V4-map.json exists.</span>';
+      });
+  </script>
+</body>
+</html>
