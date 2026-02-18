@@ -19,115 +19,59 @@
     tr:hover { background: #fafafa; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .badge { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
-    .badge-audio { background: #e7f3ff; color: #0550ae; }
-    .badge-graphics { background: #ddf4ff; color: #0969da; }
-    .badge-ae { background: #fff8c5; color: #9a6700; }
-    .badge-premiere { background: #ffebe9; color: #cf222e; }
-    .badge-video { background: #dafbe1; color: #1a7f37; }
-    .path { font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .load-err { color: #cf222e; }
   </style>
 </head>
 <body>
   <h1>Canvas Course Video Manager</h1>
   <div class="filters">
-    <label>Type: <select id="filterType"><option value="">All</option><option value="audio">Audio</option><option value="graphics">Graphics</option><option value="ae">AE</option><option value="premiere">Premiere</option><option value="video">Video</option></select></label>
-    <label>Folder: <select id="filterModule"><option value="">All</option></select></label>
+    <label>Module: <select id="filterModule"><option value="">All</option><option value="Orientation">Orientation</option><option value="M1">M1</option><option value="M2">M2</option><option value="M3">M3</option><option value="M4">M4</option><option value="M5">M5</option></select></label>
   </div>
   <div class="stats" id="stats"></div>
   <table>
     <thead>
-      <tr><th>Path</th><th>Name</th><th>Type</th><th>Size</th><th>Open in Box</th></tr>
+      <tr><th>Title</th><th>Duration</th><th>ID</th><th>Link</th></tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
 
   <script>
-    const BOX_BASE = 'https://usu.app.box.com';
-    const MEDIA_EXT = { aup3: 'audio', ai: 'graphics', aep: 'ae', prproj: 'premiere', mp4: 'video', mov: 'video', webm: 'video' };
-    const TYPE_LABELS = { audio: 'Audio', graphics: 'Graphics', ae: 'AE', premiere: 'Premiere', video: 'Video' };
-
-    let allItems = [];
-    let modules = new Set();
-
-    function getType(name) {
-      const ext = (name || '').split('.').pop()?.toLowerCase();
-      return MEDIA_EXT[ext] || null;
-    }
-
-    function parseModule(path) {
-      if (!path) return '';
-      const parts = path.replace(/^AD-365-V4\/?\s*/, '').split('/');
-      const first = parts[0]?.trim();
-      if (/^m[1-5]$/.test(first)) return first;
-      return first || '';
-    }
-
-    function formatBytes(n) {
-      if (!n || n === 0) return '—';
-      if (n < 1024) return n + ' B';
-      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
-      return (n / 1024 / 1024).toFixed(2) + ' MB';
-    }
-
-    function filterAndRender() {
-      const typeFilter = document.getElementById('filterType').value;
-      const moduleFilter = document.getElementById('filterModule').value;
-      const filtered = allItems.filter((item) => {
-        if (typeFilter && getType(item.name) !== typeFilter) return false;
-        if (moduleFilter && parseModule(item.path) !== moduleFilter) return false;
-        return true;
-      });
-      renderTable(filtered);
-      document.getElementById('stats').textContent = `Showing ${filtered.length} of ${allItems.length} media files`;
-    }
-
-    function renderTable(items) {
-      const tbody = document.getElementById('tbody');
-      tbody.innerHTML = items.map((item) => {
-        const type = getType(item.name);
-        const label = type ? TYPE_LABELS[type] : '—';
-        const badgeClass = type ? `badge badge-${type}` : '';
-        const boxUrl = item.type === 'folder' ? `${BOX_BASE}/folder/${item.id}` : `${BOX_BASE}/file/${item.id}`;
-        return `<tr>
-          <td class="path" title="${(item.path || '').replace(/"/g, '&quot;')}">${escapeHtml(item.path || '')}</td>
-          <td>${escapeHtml(item.name || '')}</td>
-          <td><span class="${badgeClass}">${escapeHtml(label)}</span></td>
-          <td>${item.type === 'file' ? formatBytes(item.size) : '—'}</td>
-          <td><a href="${boxUrl}" target="_blank" rel="noopener">Open in Box</a></td>
-        </tr>`;
-      }).join('');
-    }
-
     function escapeHtml(s) {
       const d = document.createElement('div');
       d.textContent = s;
       return d.innerHTML;
     }
 
-    const FOLDER_ORDER = ['orientation', 'm1', 'm2', 'm3', 'm4', 'm5', 'Audio', 'Ae', 'Ai'];
-    function populateModuleFilter() {
-      const sel = document.getElementById('filterModule');
-      const rest = [...modules].filter((f) => !FOLDER_ORDER.includes(f)).sort();
-      const opts = ['', ...FOLDER_ORDER, ...rest];
-      sel.innerHTML = opts.map((m) => `<option value="${escapeHtml(m)}">${m || 'All'}</option>`).join('');
+    function renderTable(videos) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = videos.map((v) => `<tr>
+        <td>${escapeHtml(v.title || '')}</td>
+        <td>${escapeHtml(v.duration || '—')}</td>
+        <td>${escapeHtml(v.id || '—')}</td>
+        <td><a href="${escapeHtml(v.link || '#')}" target="_blank" rel="noopener">Open in Canvas</a></td>
+      </tr>`).join('');
     }
 
-    fetch('./data/AD-365-V4-map.json')
+    let allVideos = [];
+
+    function filterAndRender() {
+      const moduleFilter = document.getElementById('filterModule').value;
+      const filtered = moduleFilter
+        ? allVideos.filter((v) => v.module === moduleFilter)
+        : allVideos;
+      renderTable(filtered);
+      document.getElementById('stats').textContent = `Showing ${filtered.length} of ${allVideos.length} learning activity videos`;
+    }
+
+    fetch('./data/learning-activity-videos.json')
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then((data) => {
-        const files = (data.items || []).filter((i) => i.type === 'file');
-        allItems = files.filter((i) => getType(i.name));
-        allItems.forEach((i) => modules.add(parseModule(i.path)));
-        modules.delete('');
-        populateModuleFilter();
-        filterAndRender();
-        document.getElementById('filterType').onchange = filterAndRender;
+      .then((videos) => {
+        allVideos = videos;
         document.getElementById('filterModule').onchange = filterAndRender;
+        filterAndRender();
       })
       .catch((err) => {
-        document.getElementById('stats').innerHTML = '<span class="load-err">Failed to load map: ' + escapeHtml(err.message) + '. Ensure data/AD-365-V4-map.json exists.</span>';
+        document.getElementById('stats').innerHTML = '<span class="load-err">Failed to load videos: ' + escapeHtml(err.message) + '. Ensure data/learning-activity-videos.json exists.</span>';
       });
   </script>
 </body>
