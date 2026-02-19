@@ -7,41 +7,61 @@
   <style>
     :root { --fg: #1a1a1a; --bg: #f8f9fa; --accent: #0969da; --muted: #656d76; }
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 1rem; background: var(--bg); color: var(--fg); line-height: 1.5; }
-    h1 { font-size: 1.5rem; margin: 0 0 1rem; }
-    .filters { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
-    .filters label { font-size: 0.875rem; }
-    .filters select { padding: 0.35rem 0.5rem; font-size: 0.875rem; }
-    .stats { font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 1rem; background: #FFFFFF; color: var(--fg); line-height: 1.5; }
+    .header { text-align: center; margin-bottom: 0; }
+    .header h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+    .tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 0; margin: 0; padding: 0; list-style: none; }
+    .tabs button { padding: 0.5rem 1rem; font-size: 0.875rem; font-family: inherit; border: none; border-top: 1px solid #ADADAD; border-left: 1px solid #ADADAD; border-right: 1px solid #ADADAD; border-bottom: 1px solid #ADADAD; background: #f6f8fa; cursor: pointer; border-radius: 6px 6px 0 0; }
+    .tabs button:hover { background: #eee; }
+    .tabs button.active { background: #fff; border-top: 2px solid #ADADAD; border-left: 2px solid #ADADAD; border-right: 2px solid #ADADAD; border-bottom: 1px solid #fff; margin-bottom: -1px; font-weight: 600; cursor: default; }
+    .stats { font-size: 0.875rem; color: var(--muted); margin-bottom: 0; }
+    .table-panel { }
+    .table-wrapper { border: 2px solid #ADADAD; border-radius: 6px; overflow: hidden; margin-top: -1px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
     td { text-align: center; }
-    thead th { background: #f6f8fa; font-weight: 600; font-size: 1.25rem; color: var(--fg); text-align: center !important; }
+    thead th { font-weight: 600; font-size: 1.25rem; color: var(--fg); text-align: center !important; border-bottom: 2px solid #CCC; }
     tbody th { font-size: 1.25rem; font-weight: inherit; text-align: left; background: transparent; }
     table col:nth-child(1) { width: 37%; }
     table col:nth-child(n+2) { width: 9%; }
-    tr:hover { background: #fafafa; }
+    table tbody tr:nth-child(even) { background: #EFEFEF; }
+    table tbody tr:hover { background: #fafafa; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .load-err { color: #cf222e; }
     .icon-placeholder { color: #333; display: inline-block; line-height: 0; }
     .icon-linked { color: #0000EE; display: inline-block; line-height: 0; text-decoration: none; }
     .icon-placeholder svg, .icon-linked svg { width: 24px; height: 24px; vertical-align: middle; }
+    .skip-link { position: absolute; top: -100px; left: 0.5rem; padding: 0.5rem 0.75rem; background: var(--fg); color: var(--bg); font-size: 0.875rem; z-index: 100; border-radius: 4px; }
+    .skip-link:focus { top: 0.5rem; }
   </style>
 </head>
 <body>
-  <h1>Canvas Course Video Manager</h1>
-  <div class="filters">
-    <label>Module: <select id="filterModule"><option value="">All</option><option value="Orientation">Orientation</option><option value="M1">M1</option><option value="M2">M2</option><option value="M3">M3</option><option value="M4">M4</option><option value="M5">M5</option></select></label>
+  <a href="#first-table-link" class="skip-link">Skip to first link in table</a>
+  <div class="header">
+    <h1>Canvas Course Video Manager</h1>
   </div>
-  <div class="stats" id="stats"></div>
-  <table>
-    <colgroup><col><col><col><col><col><col><col><col></colgroup>
-    <thead>
-      <tr><th scope="col">Title</th><th scope="col">Time</th><th scope="col">ID</th><th scope="col">Au</th><th scope="col">Ai</th><th scope="col">Ae</th><th scope="col">Pr</th><th scope="col">Frame</th></tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <div class="stats" id="stats" aria-live="polite"></div>
+  <div class="table-panel">
+    <div class="tabs" role="tablist" aria-label="Module">
+      <button type="button" role="tab" data-value="" aria-selected="true" class="active">All</button>
+      <button type="button" role="tab" data-value="Orientation">O</button>
+      <button type="button" role="tab" data-value="M1">M1</button>
+      <button type="button" role="tab" data-value="M2">M2</button>
+      <button type="button" role="tab" data-value="M3">M3</button>
+      <button type="button" role="tab" data-value="M4">M4</button>
+      <button type="button" role="tab" data-value="M5">M5</button>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <colgroup><col><col><col><col><col><col><col><col></colgroup>
+        <thead>
+          <tr><th scope="col">Title</th><th scope="col">Time</th><th scope="col">ID</th><th scope="col">Au</th><th scope="col">Ai</th><th scope="col">Ae</th><th scope="col">Pr</th><th scope="col">Frame</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
 
   <script>
     function escapeHtml(s) {
@@ -65,8 +85,8 @@
 
     function renderTable(videos) {
       const tbody = document.getElementById('tbody');
-      tbody.innerHTML = videos.map((v) => `<tr>
-        <th scope="row"><a href="${escapeHtml(v.link || '#')}" target="_blank" rel="noopener">${escapeHtml(v.title || '')}</a></th>
+      tbody.innerHTML = videos.map((v, i) => `<tr>
+        <th scope="row"><a ${i === 0 ? 'id="first-table-link" ' : ''}href="${escapeHtml(v.link || '#')}" target="_blank" rel="noopener">${escapeHtml(v.title || '')}</a></th>
         <td>${escapeHtml(v.duration || '—')}</td>
         <td>${escapeHtml(v.id || '—')}</td>
         <td>${iconCell(v.au, ICONS.au)}</td>
@@ -80,19 +100,27 @@
     let allVideos = [];
 
     function filterAndRender() {
-      const moduleFilter = document.getElementById('filterModule').value;
+      const activeTab = document.querySelector('.tabs button.active');
+      const moduleFilter = activeTab ? activeTab.getAttribute('data-value') || '' : '';
       const filtered = moduleFilter
         ? allVideos.filter((v) => v.module === moduleFilter)
         : allVideos;
       renderTable(filtered);
-      document.getElementById('stats').textContent = `Showing ${filtered.length} of ${allVideos.length} learning activity videos`;
     }
+
+    document.querySelectorAll('.tabs button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tabs button').forEach((b) => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        filterAndRender();
+      });
+    });
 
     fetch('./data/learning-activity-videos.json')
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then((videos) => {
         allVideos = videos;
-        document.getElementById('filterModule').onchange = filterAndRender;
         filterAndRender();
       })
       .catch((err) => {
